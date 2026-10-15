@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>极限洗车大亨 (Car Wash Master) - 沉浸式模拟洗车</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- 顶部状态栏 -->
+    <header class="top-header">
+      <div class="header-left">
+        <button id="openCarModalBtn" class="action-btn" title="更换车型与车漆">
+          🚗 换车/颜色
+        </button>
+        <div class="car-info-pill">
+          <span id="currentCarTitle" class="car-title">小米 SU7 · 霞光紫</span>
+          <span id="currentCarBadge" class="badge">爆款轿跑</span>
+        </div>
+      </div>
+
+      <!-- 清洁度进度条 -->
+      <div class="progress-container">
+        <div class="progress-labels">
+          <span>车辆干净度</span>
+          <span id="progressText" class="clean-percent">0.0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="progressBarFill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- 3分钟倒计时 -->
+        <div id="timerBox" class="timer-box" title="3分钟限时交车">
+          <span>⏱️</span>
+          <span id="timerText">03:00</span>
+        </div>
+        <button id="resetBtn" class="action-btn" title="重新洗车">
+          🔄 重洗
+        </button>
+        <button id="muteToggleBtn" class="action-btn active" title="音效开关">
+          🔊 声音
+        </button>
+      </div>
+    </header>
+
+    <!-- 脏污程度选择子工具条 -->
+    <div class="sub-bar">
+      <div class="level-selector">
+        <span class="level-label">车辆脏污程度:</span>
+        <div class="level-pills">
+          <button class="level-pill" data-level="light" title="轻度积灰，洗车迅速">轻微脏</button>
+          <button class="level-pill active" data-level="medium" title="日常雨水泥污，适度冲洗">一般脏</button>
+          <button class="level-pill" data-level="heavy" title="极度泥垢与顽固污渍，需反复冲洗">很脏 (多洗一会)</button>
+        </div>
+      </div>
+      <div class="dirt-types-hint">
+        <span class="hint-tag">🟤 泥土脏</span>
+        <span class="hint-tag">🌫️ 灰尘脏</span>
+        <span class="hint-tag">🥫 番茄酱</span>
+        <span class="hint-tag">💩 大便/鸟粪</span>
+      </div>
+    </div>
+
+    <!-- 游戏主交互画布区域 -->
+    <main class="game-area">
+      <div class="wash-bay-lights">
+        <div class="bay-light-bar"></div>
+        <div class="bay-light-bar"></div>
+        <div class="bay-light-bar"></div>
+      </div>
+      <canvas id="gameCanvas"></canvas>
+    </main>
+
+    <!-- 底部洗车工具台 -->
+    <footer class="bottom-dock">
+      <div id="toolTipText" class="tool-tip-bar">
+        喷清洗剂: 喷洒高密度雪崩泡沫，软化顽固污渍与泥垢
+      </div>
+      <div class="tool-buttons-grid">
+        <button class="tool-btn active" data-tool="foam">
+          <span class="tool-shortcut">1</span>
+          <span class="tool-icon">🫧</span>
+          <span class="tool-title">喷清洗剂</span>
+        </button>
+        <button class="tool-btn" data-tool="water">
+          <span class="tool-shortcut">2</span>
+          <span class="tool-icon">🔫</span>
+          <span class="tool-title">高压水枪</span>
+        </button>
+        <button class="tool-btn" data-tool="cloth">
+          <span class="tool-shortcut">3</span>
+          <span class="tool-icon">🧽</span>
+          <span class="tool-title">人工用布擦</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 车型与爆款颜色选择弹窗 -->
+  <div id="carSelectModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🚗 选择心仪座驾与爆款车漆</div>
+        <button id="closeCarModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="carSelectList" class="car-grid">
+          <!-- 动态注入各款车型与颜色选项 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 洗车完成 / 超时评分结算弹窗 -->
+  <div id="resultModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="result-card">
+        <div class="grade-badge-wrap">
+          <div id="resultGradeBadge" class="grade-badge grade-s">S</div>
+        </div>
+        <div id="resultStars" class="result-stars">⭐⭐⭐⭐⭐</div>
+        <div id="resultTitle" class="result-title">至尊精洗大师！</div>
+        <div id="resultComment" class="result-comment">
+          客户非常满意，车漆闪亮如镜面！
+        </div>
+
+        <div class="result-stats-row">
+          <div class="stat-item">
+            <span id="resultTimeUsed" class="stat-num">48 秒</span>
+            <span class="stat-label">清洗耗时</span>
+          </div>
+          <div class="stat-item">
+            <span id="resultCleanPercent" class="stat-num">100%</span>
+            <span class="stat-label">最终洁净度</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">满意度评级</span>
+            <span class="stat-label">S / A / B / C / F</span>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button id="resultRetryBtn" class="btn-primary">再洗一辆</button>
+          <button id="resultChangeCarBtn" class="btn-secondary">更换车型</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心逻辑脚本加载 (保证依赖顺序) -->
+  <script src="js/carsManifest.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particleSystem.js"></script>
+  <script src="js/dirtManager.js"></script>
+  <script src="js/carRenderer.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
